@@ -8,17 +8,20 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  connectivity: ^0.4.0+1
+  connectivity:
   # cupertino_icons: ^0.1.2
-  cloud_firestore: ^0.9.0
+  cloud_firestore:
   # firebase_admob: ^0.8.0
   # firebase_analytics: ^2.0.0
-  firebase_auth: ^0.8.0+1
+  firebase_auth:
   # firebase_remote_config: ^0.1.0
   # firebase_dynamic_links: ^0.2.0
-  google_sign_in: ^4.0.0
+  google_sign_in:
   # flutter_facebook_login: ^1.2.0
   # flutter_twitter_login: ^1.1.0
+  share:
+  async_resource_flutter:
+  locales:
 
 dev_dependencies:
   flutter_test:
