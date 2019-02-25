@@ -5,6 +5,7 @@ import 'backend.dart';
 import 'package:async_resource_flutter/async_resource_flutter.dart';
 import 'package:locales/currency_codes.dart';
 import 'package:locales/locales.dart';
+import 'package:display/display.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -13,6 +14,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   User user;
+  Display display;
   final getPaidAmount = TextEditingController();
   final findUser = TextEditingController();
 
@@ -20,6 +22,8 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    var size = MediaQuery.of(context).size;
+    display = Display(height: size.height, width: size.width);
     return Scaffold(
       body: Builder(
         builder: (context) => SafeArea(
@@ -27,14 +31,26 @@ class _HomePageState extends State<HomePage> {
                 future: getUser(),
                 handler: (ctx, u) {
                   user = User(u);
-                  return ListView(
-                    children: <Widget>[
-                      profileButton(context),
-                      getPaidTile(context),
-                      activityTile(context),
-                      findUserTile(context),
-                      shareApp()
-                    ],
+                  return Container(
+                    color: Colors.grey,
+                    child: Center(
+                      child: Container(
+                        color: Colors.white,
+                        constraints: BoxConstraints(maxWidth: 400),
+                        // child: ScrollConfiguration(
+                        //   behavior: ScrollBehavior(),
+                        child: ListView(
+                          children: <Widget>[
+                            profileButton(context),
+                            getPaidTile(context),
+                            activityTile(context),
+                            findUserTile(context),
+                            shareApp()
+                          ],
+                        ),
+                        // ),
+                      ),
+                    ),
                   );
                 },
               ),
@@ -45,7 +61,7 @@ class _HomePageState extends State<HomePage> {
 
   Widget profileButton(BuildContext context) => Center(
         child: Padding(
-          padding: EdgeInsets.only(top: 48, bottom: 32),
+          padding: EdgeInsets.only(top: 48, bottom: 40),
           child: FlatButton.icon(
             icon: Icon(Icons.person),
             label: Text(user.username ?? 'Profile'),
@@ -69,11 +85,12 @@ class _HomePageState extends State<HomePage> {
                 child: TextField(
                   controller: getPaidAmount,
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 28),
+                  style: TextStyle(fontSize: 32),
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
                     prefix: Text('\$'),
-                    helperText: 'Optional amount',
+                    // prefixIcon: Icon(Icons.attach_money),
+                    helperText: 'Amount optional',
                     // border: OutlineInputBorder(),
                   ),
                 ),
@@ -104,62 +121,61 @@ class _HomePageState extends State<HomePage> {
         ]),
       );
 
-  Widget findUserTile(BuildContext context) => _uiSectionTile(
-        Column(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[
-          Text('Find user', style: TextStyle(fontSize: 20)),
-          Padding(
-            padding: EdgeInsets.symmetric(vertical: 24),
-            child: Center(
-              child: SizedBox(
-                width: 192,
-                child: TextField(
-                  controller: findUser,
-                  style: TextStyle(fontSize: 22),
-                  decoration: InputDecoration(
-                    hintText: 'Username',
-                    suffixIcon: IconButton(
-                        icon: Icon(Icons.search),
-                        onPressed: () async {
-                          final profile = Profile(username: findUser.text);
-                          print(profile);
-                        }),
-                  ),
+  Widget activityTile(BuildContext context) {
+    Widget activityRow(UserTransaction t) => Row(
+          // mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: <Widget>[
+            Tooltip(
+                message: t.amSender ? 'sent' : 'received',
+                child: Text(
+                  t.amSender ? '→' : '←',
+                  style: TextStyle(fontSize: 24, height: .5),
+                )),
+            // Icon(t.amSender ? Icons.arrow_forward_ios : Icons.arrow_back_ios),
+            Expanded(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 24),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Text(t.username),
+                          Text(
+                            '${t.timestamp}',
+                            style: TextStyle(height: 1.5),
+                          ),
+                        ]),
+                    Column(
+                      children: <Widget>[
+                        Text('\$${t.amount}'),
+                        Icon(Icons.payment)
+                      ],
+                    )
+                  ],
                 ),
               ),
             ),
-          ),
-        ]),
-      );
 
-  Widget activityTile(BuildContext context) {
-    Widget activityRow(UserTransaction t) => Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: <Widget>[
-            Icon(t.amSender ? Icons.arrow_forward_ios : Icons.arrow_back_ios),
-            Column(children: <Widget>[
-              Text(t.username),
-              SizedBox(height: 16),
-              Text('${t.timestamp}')
-            ]),
             Column(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: <Widget>[
-                Text('\$${t.amount}'),
-                SizedBox(height: 16),
-                Text('${t.walletType}')
-              ],
-            ),
-            Column(
-              children: <Widget>[
-                t.status == TransactionStatus.confirmed
-                    ? Icon(Icons.check)
-                    : Container(
-                        // decoration: _outline(),
-                        child: IconButton(
-                            icon: Icon(Icons.check),
-                            onPressed: () => _confirm(t))),
                 PopupMenuButton(
                     icon: Icon(Icons.more_horiz),
                     itemBuilder: (context) => _overflowItems(t, context)),
+                t.status == TransactionStatus.confirmed
+                    ? Icon(Icons.check_circle_outline)
+                    : Container(
+                        height: 1,
+                        width: 1,
+                      ),
+                // Container(
+                //     // decoration: _outline(),
+                //     child: IconButton(
+                //         icon: Icon(Icons.check),
+                //         onPressed: () => _confirm(t))),
               ],
             )
           ],
@@ -178,6 +194,33 @@ class _HomePageState extends State<HomePage> {
       ]),
     );
   }
+
+  Widget findUserTile(BuildContext context) => _uiSectionTile(
+        Column(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[
+          Text('Find user', style: TextStyle(fontSize: 20)),
+          Padding(
+            padding: EdgeInsets.symmetric(vertical: 24),
+            child: Center(
+              child: SizedBox(
+                width: 256,
+                child: TextField(
+                  controller: findUser,
+                  style: TextStyle(fontSize: 22),
+                  decoration: InputDecoration(
+                    hintText: 'Username',
+                    suffixIcon: IconButton(
+                        icon: Icon(Icons.search),
+                        onPressed: () async {
+                          final profile = Profile(username: findUser.text);
+                          print(profile);
+                        }),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ]),
+      );
 
   Widget shareApp() => Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -203,7 +246,7 @@ BoxDecoration _outline() => BoxDecoration(
     borderRadius: BorderRadius.all(Radius.circular(8)));
 
 Widget _uiSectionTile(Widget child) => Padding(
-      padding: EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+      padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
       child: Container(
         decoration: _outline(),
         child: Padding(padding: EdgeInsets.all(16), child: child),
@@ -212,17 +255,21 @@ Widget _uiSectionTile(Widget child) => Padding(
 
 List<PopupMenuEntry> _overflowItems(UserTransaction t, BuildContext context) {
   final list = List<PopupMenuEntry>();
-  if (t.status == TransactionStatus.confirmed)
-    list.add(PopupMenuItem(
-      child: FlatButton.icon(
-        icon: Icon(Icons.undo),
-        label: Text('Unconfirm'),
-        onPressed: () => _confirm(t),
-      ),
-    ));
   list.add(PopupMenuItem(
-    child: IconButton(
-      icon: Icon(Icons.delete),
+    child: t.status == TransactionStatus.confirmed
+        ? FlatButton.icon(
+            icon: Icon(Icons.undo),
+            label: Text('Unconfirm'),
+            onPressed: () => _confirm(t))
+        : FlatButton.icon(
+            icon: Icon(Icons.check),
+            label: Text('Confirm'),
+            onPressed: () => _confirm(t)),
+  ));
+  list.add(PopupMenuItem(
+    child: FlatButton.icon(
+      label: Text('Remove'),
+      icon: Icon(Icons.close),
       onPressed: () => _tryDelete(t),
     ),
   ));
